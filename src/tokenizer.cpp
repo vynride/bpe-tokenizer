@@ -21,7 +21,8 @@ struct HASH
     }
 };
 
-unordered_map<pair<int, int>, int, HASH> pairGen(vector<int> tokens);
+pair<vector<int>, unordered_map<pair<int, int>, string, HASH>> encode(vector<int> tokens, unordered_map<pair<int, int>, string, HASH> vocab, int mergeCount);
+unordered_map<pair<int, int>, int, HASH> pairGen(const vector<int> &tokens);
 void printVocab(unordered_map<pair<int, int>, int, HASH> vocab);
 pair<int, int> mostFreq(unordered_map<pair<int, int>, int, HASH> vocab);
 vector<int> mergeTokens(vector<int> tokens, pair<int, int> mostFreqPair, int newPairsCount);
@@ -32,7 +33,6 @@ int main(void)
     cout << "Enter String: ";
 
     getline(cin, str);
-    // cout << "\nProvided String: " << str << "\n\n";
 
     int mergeCount;
     cout << "Enter number of merges to perform: ";
@@ -52,45 +52,14 @@ int main(void)
 
     cout << "]\n";
 
-    unordered_map<pair<int, int>, int, HASH> freqMap;
-
-    freqMap = pairGen(tokens);
-    // printVocab(freqMap);
-
-    int newPairsCount = 0;
     unordered_map<pair<int, int>, string, HASH> vocab;
 
-    while (newPairsCount < mergeCount)
-    {
-        pair<int, int> mostFreqPair = mostFreq(freqMap);
-
-        // early stop
-        if (freqMap[mostFreqPair] == 1)
-        {
-            cout << "\nStopping as Maximum Frequency among Pairs is 1\n";
-            break;
-        }
-
-        cout << "\nSelected Most Frequent Pair: (" << mostFreqPair.first << ", " << mostFreqPair.second << ")";
-
-        newPairsCount++;
-        vocab[mostFreqPair] = 255 + newPairsCount;
-
-        tokens = mergeTokens(tokens, mostFreqPair, newPairsCount);
-        cout << "\nTokens after merging: [";
-        for (auto tok : tokens)
-        {
-            cout << tok << ", ";
-        }
-
-        cout << "]\n";
-
-        freqMap = pairGen(tokens);
-        // printVocab(freqMap);
-    }
+    pair<vector<int>, unordered_map<pair<int, int>, string, HASH>> encodingRes = encode(tokens, vocab, mergeCount);
+    tokens = encodingRes.first;
+    vocab = encodingRes.second;
 }
 
-unordered_map<pair<int, int>, int, HASH> pairGen(vector<int> tokens)
+unordered_map<pair<int, int>, int, HASH> pairGen(const vector<int> &tokens)
 {
     int len = tokens.size();
 
@@ -138,19 +107,65 @@ pair<int, int> mostFreq(unordered_map<pair<int, int>, int, HASH> vocab)
     return maxFreqItem;
 }
 
-vector<int> mergeTokens(vector<int> tokens, pair<int, int> mostFreqPair, int newPairsCount)
+vector<int> mergeTokens(vector<int> tokens, pair<int, int> mostFreqPair, int newToken)
 {
+    // avoid having to modify original vector in loop
+    vector<int> newTokens;
+    size_t i = 0;
 
-    for (size_t i = 0; i < tokens.size() - 1; i++)
+    while (i < tokens.size())
     {
-        if (tokens[i] == mostFreqPair.first && tokens[i + 1] == mostFreqPair.second)
+        if (i < tokens.size() - 1 && tokens[i] == mostFreqPair.first && tokens[i + 1] == mostFreqPair.second)
         {
-            tokens[i] = 255 + newPairsCount;
+            newTokens.push_back(newToken);
+            i += 2;
+        }
 
-            tokens.erase(tokens.begin() + i + 1);
-            i--;
+        else
+        {
+            newTokens.push_back(tokens[i]);
+            i++;
         }
     }
 
-    return tokens;
+    return newTokens;
+}
+
+pair<vector<int>, unordered_map<pair<int, int>, string, HASH>> encode(vector<int> tokens, unordered_map<pair<int, int>, string, HASH> vocab, int mergeCount)
+{
+    int newPairsCount = 0;
+    unordered_map<pair<int, int>, int, HASH> freqMap;
+
+    freqMap = pairGen(tokens);
+
+    while (newPairsCount < mergeCount)
+    {
+        pair<int, int> mostFreqPair = mostFreq(freqMap);
+
+        // early stop
+        if (freqMap[mostFreqPair] == 1)
+        {
+            cout << "\nStopping as Maximum Frequency among Pairs is 1\n";
+            break;
+        }
+
+        cout << "\nSelected Most Frequent Pair: (" << mostFreqPair.first << ", " << mostFreqPair.second << ")";
+
+        int newToken = 255 + newPairsCount;
+        newPairsCount++;
+        vocab[mostFreqPair] = to_string(newToken);
+
+        tokens = mergeTokens(tokens, mostFreqPair, newToken);
+        cout << "\nTokens after merging: [";
+        for (auto tok : tokens)
+        {
+            cout << tok << ", ";
+        }
+
+        cout << "]\n";
+
+        freqMap = pairGen(tokens);
+    }
+
+    return make_pair(tokens, vocab);
 }
