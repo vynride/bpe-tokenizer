@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -10,9 +11,8 @@ using namespace std;
     unordered_map does not provide a hash function for pair<int, int>, so we have to implement
     our own hash function
 
-    Reference: https://codeforces.com/blog/entry/21853#comment-265285
+    Reference: https://codeforces.com/blog/entry/21853
 */
-
 struct HASH
 {
     size_t operator()(const pair<int, int> &x) const
@@ -21,7 +21,8 @@ struct HASH
     }
 };
 
-pair<vector<int>, unordered_map<pair<int, int>, string, HASH>> encode(vector<int> tokens, unordered_map<pair<int, int>, string, HASH> vocab, int mergeCount);
+string detokenize(vector<int> tokens, unordered_map<int, pair<int, int>>);
+pair<vector<int>, unordered_map<pair<int, int>, int, HASH>> tokenize(vector<int> tokens, unordered_map<pair<int, int>, int, HASH> vocab, int mergeCount);
 unordered_map<pair<int, int>, int, HASH> pairGen(const vector<int> &tokens);
 void printVocab(unordered_map<pair<int, int>, int, HASH> vocab);
 pair<int, int> mostFreq(unordered_map<pair<int, int>, int, HASH> vocab);
@@ -29,10 +30,16 @@ vector<int> mergeTokens(vector<int> tokens, pair<int, int> mostFreqPair, int new
 
 int main(void)
 {
-    string str;
-    cout << "Enter String: ";
+    ifstream infile("../alice.txt");
+    if (!infile.is_open())
+    {
+        cout << "Could not open input file.\n";
+        return 1;
+    }
 
-    getline(cin, str);
+    string str((istreambuf_iterator<char>(infile)), istreambuf_iterator<char>());
+    cout << "Finished reading file\n";
+    infile.close();
 
     int mergeCount;
     cout << "Enter number of merges to perform: ";
@@ -44,25 +51,52 @@ int main(void)
         tokens.push_back(static_cast<unsigned char>(ch));
     }
 
-    cout << "\nInitial Tokens: [";
-    for (int i : tokens)
-    {
-        cout << i << ", ";
-    }
-
-    cout << "]\n";
-
-    unordered_map<pair<int, int>, string, HASH> vocab;
-
-    pair<vector<int>, unordered_map<pair<int, int>, string, HASH>> encodingRes = encode(tokens, vocab, mergeCount);
+    unordered_map<pair<int, int>, int, HASH> vocab;
+    pair<vector<int>, unordered_map<pair<int, int>, int, HASH>> encodingRes = tokenize(tokens, vocab, mergeCount);
     tokens = encodingRes.first;
     vocab = encodingRes.second;
+
+    ofstream outfile("../output.txt");
+    if (!outfile.is_open())
+    {
+        cout << "Could not open output file.\n";
+        return 2;
+    }
+
+    cout << "Writing Tokenization output\n";
+    outfile << "Tokenization\n\n";
+    outfile << "[";
+
+    for (size_t i = 0; i < tokens.size(); i++)
+    {
+        outfile << tokens[i];
+
+        if (i != tokens.size() - 1)
+        {
+            outfile << ", ";
+        }
+    }
+
+    outfile << "]\n\n";
+    cout << "Writing Detokenization output\n";
+    outfile << "Detokenization\n\n";
+
+    // reverse vocab
+    unordered_map<int, pair<int, int>> lookupTable;
+    for (auto it = vocab.begin(); it != vocab.end(); it++)
+    {
+        lookupTable[it->second] = it->first;
+
+        cout << it->second << " -> (" << it->first.first << ", " << it->first.second << ")" << endl;
+    }
+    cout << "Output for Tokenization & Detokenization written to output.txt\n";
+
+    outfile.close();
 }
 
 unordered_map<pair<int, int>, int, HASH> pairGen(const vector<int> &tokens)
 {
     int len = tokens.size();
-
     unordered_map<pair<int, int>, int, HASH> vocab;
 
     for (int i = 0; i < len - 1; i++)
@@ -131,11 +165,10 @@ vector<int> mergeTokens(vector<int> tokens, pair<int, int> mostFreqPair, int new
     return newTokens;
 }
 
-pair<vector<int>, unordered_map<pair<int, int>, string, HASH>> encode(vector<int> tokens, unordered_map<pair<int, int>, string, HASH> vocab, int mergeCount)
+pair<vector<int>, unordered_map<pair<int, int>, int, HASH>> tokenize(vector<int> tokens, unordered_map<pair<int, int>, int, HASH> vocab, int mergeCount)
 {
     int newPairsCount = 0;
     unordered_map<pair<int, int>, int, HASH> freqMap;
-
     freqMap = pairGen(tokens);
 
     while (newPairsCount < mergeCount)
@@ -149,23 +182,21 @@ pair<vector<int>, unordered_map<pair<int, int>, string, HASH>> encode(vector<int
             break;
         }
 
-        cout << "\nSelected Most Frequent Pair: (" << mostFreqPair.first << ", " << mostFreqPair.second << ")";
-
         int newToken = 255 + newPairsCount;
         newPairsCount++;
-        vocab[mostFreqPair] = to_string(newToken);
+        vocab[mostFreqPair] = newToken;
+        cout << "\nSelected Most Frequent Pair: (" << mostFreqPair.first << ", " << mostFreqPair.second << ") -> " << newToken;
 
         tokens = mergeTokens(tokens, mostFreqPair, newToken);
-        cout << "\nTokens after merging: [";
-        for (auto tok : tokens)
-        {
-            cout << tok << ", ";
-        }
-
-        cout << "]\n";
 
         freqMap = pairGen(tokens);
     }
+    cout << "\nEncoding Completed\n";
 
     return make_pair(tokens, vocab);
+}
+
+string detokenize(vector<int> tokens, unordered_map<int, pair<int, int>>)
+{
+    
 }
