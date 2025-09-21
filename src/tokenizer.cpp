@@ -1,112 +1,12 @@
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <unordered_map>
-#include <utility>
-#include <vector>
+#include "tokenizer.h"
 
 using namespace std;
-
-/*
-    unordered_map does not provide a hash function for pair<long long, long long>, so we have to implement
-    our own hash function
-
-    Reference: https://www.geeksforgeeks.org/cpp/how-to-create-an-unordered_map-of-pairs-in-c/
-*/
-struct HASH
-{
-    template <class T1, class T2>
-    size_t operator()(const pair<T1, T2> &p) const
-    {
-        size_t hash1 = hash<T1>{}(p.first);
-        size_t hash2 = hash<T2>{}(p.second);
-
-        return hash1 ^ (hash2 + 0x9e3779b9 + (hash1 << 6) + (hash1 >> 2));
-    }
-};
 
 string detokenize(vector<long long> &tokens, unordered_map<long long, pair<long long, long long>> lookupTable);
 pair<vector<long long>, unordered_map<pair<long long, long long>, long long, HASH>> tokenize(vector<long long> &tokens, unordered_map<pair<long long, long long>, long long, HASH> vocab, long long mergeCount);
 unordered_map<pair<long long, long long>, long long, HASH> pairGen(const vector<long long> &tokens);
 pair<long long, long long> mostFreq(unordered_map<pair<long long, long long>, long long, HASH> vocab);
 vector<long long> mergeTokens(vector<long long> &tokens, pair<long long, long long> mostFreqPair, long long newPairsCount);
-
-int main(void)
-{
-    ifstream infile("../alice.txt", ios::in);
-    if (!infile.is_open())
-    {
-        cout << "Could not open input file.\n";
-        return 1;
-    }
-
-    string str((istreambuf_iterator<char>(infile)), istreambuf_iterator<char>());
-    cout << "Finished reading file\n";
-    infile.close();
-
-    long long mergeCount = 1e18 * 1LL;
-    string inputNumber;
-    cout << "No. of merges to perform (press ENTER for maximum): ";
-    getline(cin, inputNumber);
-
-    if (!inputNumber.empty())
-    {
-        mergeCount = stoll(inputNumber);
-    }
-
-    vector<long long> tokens;
-    for (char ch : str)
-    {
-        tokens.push_back(static_cast<unsigned char>(ch));
-    }
-
-    unordered_map<pair<long long, long long>, long long, HASH> vocab;
-    pair<vector<long long>, unordered_map<pair<long long, long long>, long long, HASH>> encodingRes = tokenize(tokens, vocab, mergeCount);
-    tokens = encodingRes.first;
-    vocab = encodingRes.second;
-
-    ofstream outfile("../output.txt", ios::out);
-    if (!outfile.is_open())
-    {
-        cout << "Could not open output file.\n";
-        return 2;
-    }
-
-    cout << "Writing Tokenization output\n";
-    outfile << "---------- Tokenization ----------\n\n";
-    outfile << "[";
-
-    for (size_t i = 0; i < tokens.size(); i++)
-    {
-        outfile << tokens[i];
-
-        if (i != tokens.size() - 1)
-        {
-            outfile << ", ";
-        }
-    }
-
-    outfile << "]\n\n";
-    cout << "Writing Detokenization output\n";
-    outfile << "---------- Detokenization ----------\n\n";
-
-    // reverse vocab
-    unordered_map<long long, pair<long long, long long>> lookupTable;
-    for (auto it = vocab.begin(); it != vocab.end(); it++)
-    {
-        lookupTable[it->second] = it->first;
-
-        cout << it->second << " -> (" << it->first.first << ", " << it->first.second << ")" << endl;
-    }
-
-    string detokenizedText = detokenize(tokens, lookupTable);
-    outfile << detokenizedText << '\n';
-    cout << "\nOutput for Tokenization & Detokenization written to output.txt\n";
-
-    outfile.close();
-
-    return 0;
-}
 
 unordered_map<pair<long long, long long>, long long, HASH> pairGen(const vector<long long> &tokens)
 {
