@@ -8,24 +8,28 @@
 using namespace std;
 
 /*
-    unordered_map does not provide a hash function for pair<int, int>, so we have to implement
+    unordered_map does not provide a hash function for pair<long long, long long>, so we have to implement
     our own hash function
 
-    Reference: https://codeforces.com/blog/entry/21853
+    Reference: https://www.geeksforgeeks.org/cpp/how-to-create-an-unordered_map-of-pairs-in-c/
 */
 struct HASH
 {
-    size_t operator()(const pair<int, int> &x) const
+    template <class T1, class T2>
+    size_t operator()(const pair<T1, T2> &p) const
     {
-        return hash<long long>()(((long long)x.first) ^ (((long long)x.second) << 32));
+        size_t hash1 = hash<T1>{}(p.first);
+        size_t hash2 = hash<T2>{}(p.second);
+
+        return hash1 ^ (hash2 + 0x9e3779b9 + (hash1 << 6) + (hash1 >> 2));
     }
 };
 
-string detokenize(vector<int> &tokens, unordered_map<int, pair<int, int>> lookupTable);
-pair<vector<int>, unordered_map<pair<int, int>, int, HASH>> tokenize(vector<int> &tokens, unordered_map<pair<int, int>, int, HASH> vocab, long long mergeCount);
-unordered_map<pair<int, int>, int, HASH> pairGen(const vector<int> &tokens);
-pair<int, int> mostFreq(unordered_map<pair<int, int>, int, HASH> vocab);
-vector<int> mergeTokens(vector<int> &tokens, pair<int, int> mostFreqPair, int newPairsCount);
+string detokenize(vector<long long> &tokens, unordered_map<long long, pair<long long, long long>> lookupTable);
+pair<vector<long long>, unordered_map<pair<long long, long long>, long long, HASH>> tokenize(vector<long long> &tokens, unordered_map<pair<long long, long long>, long long, HASH> vocab, long long mergeCount);
+unordered_map<pair<long long, long long>, long long, HASH> pairGen(const vector<long long> &tokens);
+pair<long long, long long> mostFreq(unordered_map<pair<long long, long long>, long long, HASH> vocab);
+vector<long long> mergeTokens(vector<long long> &tokens, pair<long long, long long> mostFreqPair, long long newPairsCount);
 
 int main(void)
 {
@@ -40,18 +44,24 @@ int main(void)
     cout << "Finished reading file\n";
     infile.close();
 
-    long long mergeCount;
-    cout << "No. of merges to perform: (press ENTER for maximum)";
-    cin >> mergeCount;
+    long long mergeCount = 1e18 * 1LL;
+    string inputNumber;
+    cout << "No. of merges to perform (press ENTER for maximum): ";
+    getline(cin, inputNumber);
 
-    vector<int> tokens;
+    if (!inputNumber.empty())
+    {
+        mergeCount = stoll(inputNumber);
+    }
+
+    vector<long long> tokens;
     for (char ch : str)
     {
         tokens.push_back(static_cast<unsigned char>(ch));
     }
 
-    unordered_map<pair<int, int>, int, HASH> vocab;
-    pair<vector<int>, unordered_map<pair<int, int>, int, HASH>> encodingRes = tokenize(tokens, vocab, mergeCount);
+    unordered_map<pair<long long, long long>, long long, HASH> vocab;
+    pair<vector<long long>, unordered_map<pair<long long, long long>, long long, HASH>> encodingRes = tokenize(tokens, vocab, mergeCount);
     tokens = encodingRes.first;
     vocab = encodingRes.second;
 
@@ -81,7 +91,7 @@ int main(void)
     outfile << "---------- Detokenization ----------\n\n";
 
     // reverse vocab
-    unordered_map<int, pair<int, int>> lookupTable;
+    unordered_map<long long, pair<long long, long long>> lookupTable;
     for (auto it = vocab.begin(); it != vocab.end(); it++)
     {
         lookupTable[it->second] = it->first;
@@ -91,17 +101,19 @@ int main(void)
 
     string detokenizedText = detokenize(tokens, lookupTable);
     outfile << detokenizedText << '\n';
-    cout << "Output for Tokenization & Detokenization written to output.txt\n";
+    cout << "\nOutput for Tokenization & Detokenization written to output.txt\n";
 
     outfile.close();
+
+    return 0;
 }
 
-unordered_map<pair<int, int>, int, HASH> pairGen(const vector<int> &tokens)
+unordered_map<pair<long long, long long>, long long, HASH> pairGen(const vector<long long> &tokens)
 {
-    int len = tokens.size();
-    unordered_map<pair<int, int>, int, HASH> vocab;
+    size_t len = tokens.size();
+    unordered_map<pair<long long, long long>, long long, HASH> vocab;
 
-    for (int i = 0; i < len - 1; i++)
+    for (size_t i = 0; i < len - 1; i++)
     {
         if (vocab.find(make_pair(tokens[i], tokens[i + 1])) != vocab.end())
         {
@@ -117,10 +129,10 @@ unordered_map<pair<int, int>, int, HASH> pairGen(const vector<int> &tokens)
     return vocab;
 }
 
-pair<int, int> mostFreq(unordered_map<pair<int, int>, int, HASH> vocab)
+pair<long long, long long> mostFreq(unordered_map<pair<long long, long long>, long long, HASH> vocab)
 {
-    int maxFreq = 0;
-    pair<int, int> maxFreqItem = make_pair(0, 0);
+    long long maxFreq = 0;
+    pair<long long, long long> maxFreqItem = make_pair(0, 0);
 
     for (const auto &item : vocab)
     {
@@ -134,10 +146,10 @@ pair<int, int> mostFreq(unordered_map<pair<int, int>, int, HASH> vocab)
     return maxFreqItem;
 }
 
-vector<int> mergeTokens(vector<int> &tokens, pair<int, int> mostFreqPair, int newToken)
+vector<long long> mergeTokens(vector<long long> &tokens, pair<long long, long long> mostFreqPair, long long newToken)
 {
     // avoid having to modify original vector in loop
-    vector<int> newTokens;
+    vector<long long> newTokens;
     size_t i = 0;
 
     while (i < tokens.size())
@@ -158,15 +170,15 @@ vector<int> mergeTokens(vector<int> &tokens, pair<int, int> mostFreqPair, int ne
     return newTokens;
 }
 
-pair<vector<int>, unordered_map<pair<int, int>, int, HASH>> tokenize(vector<int> &tokens, unordered_map<pair<int, int>, int, HASH> vocab, long long mergeCount)
+pair<vector<long long>, unordered_map<pair<long long, long long>, long long, HASH>> tokenize(vector<long long> &tokens, unordered_map<pair<long long, long long>, long long, HASH> vocab, long long mergeCount)
 {
     long long newPairsCount = 1LL;
-    unordered_map<pair<int, int>, int, HASH> freqMap;
+    unordered_map<pair<long long, long long>, long long, HASH> freqMap;
     freqMap = pairGen(tokens);
 
     while (newPairsCount < mergeCount)
     {
-        pair<int, int> mostFreqPair = mostFreq(freqMap);
+        pair<long long, long long> mostFreqPair = mostFreq(freqMap);
 
         // early stop
         if (freqMap[mostFreqPair] == 1)
@@ -189,14 +201,14 @@ pair<vector<int>, unordered_map<pair<int, int>, int, HASH>> tokenize(vector<int>
     return make_pair(tokens, vocab);
 }
 
-string detokenize(vector<int> &tokens, unordered_map<int, pair<int, int>> lookupTable)
+string detokenize(vector<long long> &tokens, unordered_map<long long, pair<long long, long long>> lookupTable)
 {
     bool foundMergedToken = false;
 
     do
     {
         foundMergedToken = false;
-        vector<int> unmergedTokens;
+        vector<long long> unmergedTokens;
         // reserve enough space to avoid resizing unmergedTokens many times
         unmergedTokens.reserve(tokens.size());
 
@@ -207,7 +219,7 @@ string detokenize(vector<int> &tokens, unordered_map<int, pair<int, int>> lookup
             {
                 foundMergedToken = true;
 
-                pair<int, int> unmergedPair = lookupTable[tokens[i]];
+                pair<long long, long long> unmergedPair = lookupTable[tokens[i]];
                 unmergedTokens.push_back(unmergedPair.first);
                 unmergedTokens.push_back(unmergedPair.second);
             }
@@ -224,6 +236,13 @@ string detokenize(vector<int> &tokens, unordered_map<int, pair<int, int>> lookup
 
     } while (foundMergedToken);
 
-    string detokenizedText = string(tokens.begin(), tokens.end());
+    string detokenizedText;
+    detokenizedText.reserve(tokens.size());
+
+    for (long long tok : tokens)
+    {
+        detokenizedText += static_cast<char>(tok);
+    }
+
     return detokenizedText;
 }
