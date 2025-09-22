@@ -1,7 +1,6 @@
 # Byte Pair Encoding Tokenizer  
-#### An implementation in C++ of the Byte Pair Encoding (BPE) algorithm for text tokenization.
 ---
-
+An implementation in C++ of the Byte Pair Encoding (BPE) algorithm for text tokenization.
 ## 📜 Table of Contents
 - [✨ Description](#-description)
 - [🧠 How it Works](#-how-it-works)
@@ -88,7 +87,7 @@ This file serves as the user-facing entry point, providing a simple CLI to inter
 ## ✨ Bonus Features
 - Unicode corner cases 
 - Handling of special tokens
-- [YouTube Demo](https://youtube.com/).
+- [Demo Video](https://drive.google.com/file/d/17nE_Pq25MQSZE1vpHiNglW3P9FawqQZx/view?usp=drive_link).
 
 ## 🔄 Workflow
 The application guides you through a simple train-encode-decode process.
