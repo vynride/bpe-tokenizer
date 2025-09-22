@@ -90,7 +90,7 @@ pair<vector<long long>, unordered_map<pair<long long, long long>, long long, HAS
         long long newToken = 255 * 1LL + newPairsCount;
         newPairsCount++;
         vocab[mostFreqPair] = newToken;
-        cout << "\nSelected Most Frequent Pair: (" << mostFreqPair.first << ", " << mostFreqPair.second << ") -> " << newToken;
+        cout << "\nSelected Pair: (" << mostFreqPair.first << ", " << mostFreqPair.second << ") -> " << newToken;
 
         tokens = mergeTokens(tokens, mostFreqPair, newToken);
 
