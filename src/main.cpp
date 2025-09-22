@@ -66,6 +66,7 @@ int main(void)
                 }
 
                 pair<vector<long long>, unordered_map<pair<long long, long long>, long long, HASH>> encodingRes = tokenize(tokens, vocab, mergeCount);
+                tokens = encodingRes.first;
                 vocab = encodingRes.second;
 
                 cout << "---------- Finished Training tokenizer  ----------\n";
@@ -82,6 +83,24 @@ int main(void)
                 {
                     lookupTable[it->second] = it->first;
                 }
+                
+                outfile << "\n\n---------- Training Text Tokenization ----------\n\n";
+                outfile << "[";
+                for (size_t i = 0; i < tokens.size(); i++)
+                {
+                    outfile << tokens[i];
+                    if (i != tokens.size() - 1)
+                    {
+                        outfile << ", ";
+                    }
+                }
+                outfile << "]\n";
+                
+                string detokenizedText = detokenize(tokens, lookupTable);
+                outfile << "\n\n---------- Training Text Detokenization ----------\n\n";
+                outfile << detokenizedText << '\n';
+
+                cout << "\nOutput for Training written to output.txt\n";
                 
                 isTrained = true;
                 infile.close();
