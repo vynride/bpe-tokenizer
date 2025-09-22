@@ -154,7 +154,12 @@ The `alice.txt` file is provided as a sample training corpus. It is a plain text
     -   **Encode:** After training, enter `2` and input the string you want to tokenize.
     -   **Decode:** After encoding, enter `3` to see the original string restored.
     -   **Exit:** Enter `4` to close the program.
-      
+---
+## 🛠️ Outputs
+<img width="1006" height="622" alt="o1" src="https://github.com/user-attachments/assets/0eecd5d9-23f8-49c8-858c-845857a67b91" />
+---
+<img width="1826" height="764" alt="o2" src="https://github.com/user-attachments/assets/c4097f1c-9bc5-4409-87a9-21255674e861" />
+---
 ## 🤖 AI Usage Disclaimer
 - Generating edge cases
 - Help in writing this `README.md` :P
